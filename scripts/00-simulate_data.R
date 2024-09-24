@@ -2,7 +2,7 @@
 # Purpose: Simulates a dataset to mirror the Toronto Shelter System dataset for testing purposes
 # Author: Mariko Lee
 # Date: 23 September 2024
-# Contact: mariko.leemail@utoronto.ca
+# Contact: mariko.lee@mail.utoronto.ca
 # License: MIT
 # Pre-requisites: None
 # Any other information needed? None

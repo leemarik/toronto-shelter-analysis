@@ -11,7 +11,6 @@
 #### Workspace setup ####
 library(opendatatoronto)
 library(dplyr)
-if (!require(readr)) install.packages("readr")
 library(readr)
 
 

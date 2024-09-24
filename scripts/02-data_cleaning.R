@@ -7,13 +7,12 @@
 # Pre-requisites: None
 # Any other information needed? None
 
-#### Workspace setup ####
-library(tidyverse)
+### Workspace setup ###
 library(readr)
 library(dplyr)
 library(janitor)
 
-#### Clean data ####
+### Load data ###
 raw_data <- read_csv("data/raw_data/toronto-shelter-system-flow.csv")
 
 ### Clean column names ###
@@ -25,21 +24,27 @@ cleaned_data <- cleaned_data %>%
   drop_na()
 
 ### Select relevant columns ###
+# Include all specific age columns, gender, and population group percentage
 cleaned_data <- cleaned_data %>%
-  select(date, shelter_type, age_group, gender_male, gender_female, population)
+  select(ageunder16, age16_24, age25_34, age35_44, age45_54, age55_64, age65over, 
+         gender_male, gender_female, population_group_percentage)
 
-### Convert data types ###
+### Clean population_group_percentage by removing non-numeric characters ###
 cleaned_data <- cleaned_data %>%
   mutate(
-    date = as.Date(date, format = "%Y-%m-%d"),
-    gender_male = as.integer(gender_male),
-    gender_female = as.integer(gender_female),
-    population = as.integer(population)
+    population_group_percentage = as.numeric(gsub("[^0-9.]", "", population_group_percentage)) # Remove non-numeric characters
   )
 
-### Create new columns ###
+### Remove rows with NA in population_group_percentage ###
 cleaned_data <- cleaned_data %>%
-  mutate(total_population = gender_male + gender_female)
+  filter(!is.na(population_group_percentage))
+
+### Convert data types for gender columns ###
+cleaned_data <- cleaned_data %>%
+  mutate(
+    gender_male = as.integer(gender_male),
+    gender_female = as.integer(gender_female)
+  )
 
 ### Save cleaned data ###
 write_csv(cleaned_data, "data/analysis_data/cleaned_shelter_data.csv")
