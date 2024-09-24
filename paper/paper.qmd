@@ -1,13 +1,12 @@
 ---
-title: "My title"
-subtitle: "My subtitle if needed"
+title: "Toronto Shelter System Flow Analysis"
+subtitle: "Analysis of Shelter Use Patterns in Toronto"
 author: 
-  - First author
-  - Another author
-thanks: "Code and data are available at: LINK."
+  - Mariko Lee
+thanks: "Code and data are available at: https://github.com/leemarik/toronto-shelter-analysis"
 date: today
 date-format: long
-abstract: "First sentence. Second sentence. Third sentence. Fourth sentence."
+abstract: "This paper analyzes the Toronto Shelter System data from Open Data Toronto. The analysis focuses on shelter usage treends, population group percentage, and demographic insights. Key findings include the distribution of shelter use across different age group, and overall shelter occupancy rate. The findings assist in understaanding the patterns of homelessness and shelter use in Toronto over time"
 format: pdf
 number-sections: true
 bibliography: references.bib
@@ -19,39 +18,36 @@ bibliography: references.bib
 #| message: false
 
 library(tidyverse)
-library(palmerpenguins)
+library(readr)
+library(ggplot2)
+
+# Load The Toronto Shelter Dataset
+cleaned_data <- read_csv("../data/analysis_data/cleaned_shelter_data.csv")
+
 ```
 
 
 # Introduction
 
-You can and should cross-reference sections and sub-sections. We use @citeR and @rohan.
+Toronto is not an exception to the rule that large cities throughout the world continues to struggle with homelessness. designing policies and programs that may effectively serve the needs of this group requires an understanding of the demographic distribution of those who rely on shelter services as well as the patterns of shelter utilization. The goal of this study is to investigate the Toronto Shelter System data set from Toronto Open Data, which offers comprehensive statistics on the city's shelter usage over time. 
 
-The remainder of this paper is structured as follows. @sec-data....
-
+Through an analysis of shelter occupancy rates among various age, gender, and population categories, important insights on the dynamics of shelter use in Toronto can be obtained. Important trends will also be highlighted by this analysis, including which demographics are most vulnerable to homelessness and how shelter capacity varies.
 
 
 # Data {#sec-data}
 
-Some of our data is of penguins (@fig-bills), from @palmerpenguins.
+This analysis uses data from Toronto Open Data (@fig-shelter). The dataset includes shelter occupancy trends, broken down by age group, gender, and other demographic factors. The goal of this analysis is to provide insight into shelter usage patterns in Toronto, helping policymakers understand the population groups most affected by homelessness.
 
 ```{r}
-#| label: fig-bills
-#| fig-cap: Bills of penguins
+#| label: fig-shelter
+#| fig-cap: Shelter occupancy trends by age group and gender
 #| echo: false
 
-ggplot(penguins, aes(x = island, fill = species)) +
-  geom_bar(alpha = 0.8) +
-  scale_fill_manual(values = c("darkorange","purple","cyan4"),
-                    guide = "none") +
-  theme_minimal() +
-  facet_wrap(~species, ncol = 1) +
-  coord_flip()
+
+
 ```
 
-Talk more about it.
 
-And also planes (@fig-planes). (You can change the height and width, but don't worry about doing that until you have finished every other aspect of the paper - Quarto will try to make it look nice and the defaults usually work well once you have enough text.)
 
 ```{r}
 #| label: fig-planes
