@@ -4,9 +4,11 @@ subtitle: "Analysis of Shelter Use Patterns in Toronto"
 author: 
   - Mariko Lee
 thanks: "Code and data are available at: https://github.com/leemarik/toronto-shelter-analysis"
+toc: true
+toc-depth: 2
 date: today
 date-format: long
-abstract: "This paper analyzes the Toronto Shelter System data from Open Data Toronto. The analysis focuses on shelter usage treends, population group percentage, and demographic insights. Key findings include the distribution of shelter use across different age group, and overall shelter occupancy rate. The findings assist in understaanding the patterns of homelessness and shelter use in Toronto over time"
+abstract: "This paper analyzes the Toronto Shelter System data from Open Data Toronto. The analysis focuses on shelter usage trends, population group percentage, and demographic insights. Key findings include the distribution of shelter use across different age group, and overall shelter occupancy rate. The findings assist in understaanding the patterns of homelessness and shelter use in Toronto over time"
 format: pdf
 number-sections: true
 bibliography: references.bib
@@ -17,9 +19,14 @@ bibliography: references.bib
 #| warning: false
 #| message: false
 
+# Load necessary libraries
 library(tidyverse)
 library(readr)
 library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(scales)
+library(janitor)
 
 # Load The Toronto Shelter Dataset
 cleaned_data <- read_csv("../data/analysis_data/cleaned_shelter_data.csv")
@@ -33,120 +40,174 @@ Toronto is not an exception to the rule that large cities throughout the world c
 
 Through an analysis of shelter occupancy rates among various age, gender, and population categories, important insights on the dynamics of shelter use in Toronto can be obtained. Important trends will also be highlighted by this analysis, including which demographics are most vulnerable to homelessness and how shelter capacity varies.
 
+## Literature Review and Research Gap
 
-# Data {#sec-data}
+## Research Question & Hypothesis
+
+# Methods
+
+
+
+# Result
+
+#Data
 
 This analysis uses data from Toronto Open Data (@fig-shelter). The dataset includes shelter occupancy trends, broken down by age group, gender, and other demographic factors. The goal of this analysis is to provide insight into shelter usage patterns in Toronto, helping policymakers understand the population groups most affected by homelessness.
 
+1. Shelter Occupancy Trends by Age Group and Gender
+This graph will show the number of shelter occupants by age group, separated by gender.
+
 ```{r}
 #| label: fig-shelter
-#| fig-cap: Shelter occupancy trends by age group and gender
+#| fig-cap: Shelter Occupancy Trends by Age Group and Gender
 #| echo: false
 
-
-
-```
-
-
-
-```{r}
-#| label: fig-planes
-#| fig-cap: Relationship between wing length and width
-#| echo: false
-#| warning: false
-#| message: false
-
-analysis_data <- read_csv(here::here("data/analysis_data/analysis_data.csv"))
-
-analysis_data |> 
-  ggplot(aes(x = width, y = length)) +
-  geom_point(alpha = 0.8) +
+# Create the plot
+ggplot(cleaned_data_long, aes(x = occupants_age, y = age_group, fill = gender)) +
+  geom_bar(stat = "identity", position = "stack", alpha = 0.8) +
+  scale_fill_manual(values = c("lightblue", "pink"), guide = "legend") +
+  labs(
+    title = "Shelter Occupancy Trends by Age Group and Gender",
+    subtitle = "Comparison of male and female shelter occupants across different age groups",
+    x = "Number of Occupants",
+    y = "Age Group",
+    fill = "Gender"
+  ) +
   theme_minimal() +
-  labs(x = "Wing width (mm)",
-       y = "Wing length (mm)")
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text.x = element_text(angle = 0, hjust = 1)
+  ) +
+  scale_x_continuous(labels = scales::comma) +
+  coord_flip()
+
+
 ```
 
-Talk way more about it. 
 
-
-
-# Model
-
-The goal of our modelling strategy is twofold. Firstly,...
-
-Here we briefly describe the Bayesian analysis model used to investigate... Background details and diagnostics are included in [Appendix -@sec-model-details].
-
-## Model set-up
-
-Define $y_i$ as the number of seconds that the plane remained aloft. Then $\beta_i$ is the wing width and $\gamma_i$ is the wing length, both measured in millimeters.  
-
-\begin{align} 
-y_i|\mu_i, \sigma &\sim \mbox{Normal}(\mu_i, \sigma) \\
-\mu_i &= \alpha + \beta_i + \gamma_i\\
-\alpha &\sim \mbox{Normal}(0, 2.5) \\
-\beta &\sim \mbox{Normal}(0, 2.5) \\
-\gamma &\sim \mbox{Normal}(0, 2.5) \\
-\sigma &\sim \mbox{Exponential}(1)
-\end{align}
-
-We run the model in R [@citeR] using the `rstanarm` package of @rstanarm. We use the default priors from `rstanarm`.
-
-
-### Model justification
-
-We expect a positive relationship between the size of the wings and time spent aloft. In particular...
-
-We can use maths by including latex between dollar signs, for instance $\theta$.
-
-
-# Results
-
-Our results are summarized in @tbl-modelresults.
+2. Transition Trend Over Time
+This graph will show the number of people transitioning from or to shelter, like returned_from_housing, newly_identified, and moved_to_housing.
 
 ```{r}
+#| label: fig-trend
+#| fig-cap: Transition Trend Over Time
 #| echo: false
-#| eval: true
-#| warning: false
-#| message: false
 
-library(rstanarm)
+# Assuming you have columns: returned_from_housing, newly_identified, moved_to_housing, and a time column (e.g., date)
 
-first_model <-
-  readRDS(file = here::here("models/first_model.rds"))
+# Reshape the data to long format for plotting
+transition_data <- cleaned_data %>%
+  pivot_longer(cols = c("returned_from_housing", "newly_identified", "moved_to_housing"), 
+               names_to = "transition_type", values_to = "count")
+
+# Plot - Transition Trends Over Time
+ggplot(transition_data, aes(x = date, y = count, color = transition_type)) +
+  geom_line(size = 1.2) +
+  labs(
+    title = "Shelter Transition Trends Over Time",
+    subtitle = "Trends in shelter transitions including returns from housing and newly identified individuals",
+    x = "Date",
+    y = "Number of Transitions",
+    color = "Transition Type"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12)
+  )
+
+
 ```
+
+3. Population Groups
+This graph will show different population groups like chronic, refugees, families, and youth in shelters over time.
+```{r}
+# Reshape population group data to long format
+population_group_data <- cleaned_data %>%
+  pivot_longer(cols = c("chronic", "refugees", "families", "youth"), 
+               names_to = "population_group", values_to = "count")
+
+# Plot - Population Group Trends Over Time
+ggplot(population_group_data, aes(x = date, y = count, color = population_group)) +
+  geom_line(size = 1.2) +
+  labs(
+    title = "Population Group Trends Over Time in Shelters",
+    subtitle = "Trends of various population groups including chronic, refugees, families, and youth",
+    x = "Date",
+    y = "Number of People",
+    color = "Population Group"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12)
+  )
+
+```
+
+4. Age Distribution of Shelter Users
+This graph will show the distribution of shelter users across age groups, giving a clearer view of which age group uses the shelter system the most.
+```{r}
+# Plot - Age Distribution of Shelter Users
+ggplot(cleaned_data_long, aes(x = age_group, y = occupants, fill = age_group)) +
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Age Distribution of Shelter Users",
+    subtitle = "Number of shelter occupants across different age groups",
+    x = "Age Group",
+    y = "Number of Occupants",
+    fill = "Age Group"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12)
+  ) +
+  coord_flip()
+
+```
+
+5. Gender-Based Shelter Trends Over Time
+This graph will show how shelter occupancy for males and females changes over time.
 
 ```{r}
-#| echo: false
-#| eval: true
-#| label: tbl-modelresults
-#| tbl-cap: "Explanatory models of flight time based on wing width and wing length"
-#| warning: false
+# Assuming there is a time/date column and gender columns (gender_male, gender_female)
 
-modelsummary::modelsummary(
-  list(
-    "First model" = first_model
-  ),
-  statistic = "mad",
-  fmt = 2
-)
+# Reshape gender-based data to long format
+gender_trends_data <- cleaned_data %>%
+  pivot_longer(cols = c("gender_male", "gender_female"), 
+               names_to = "gender", values_to = "occupants") %>%
+  mutate(gender = ifelse(gender == "gender_male", "Male", "Female"))
+
+# Plot - Gender-Based Shelter Trends Over Time
+ggplot(gender_trends_data, aes(x = date, y = occupants, color = gender)) +
+  geom_line(size = 1.2) +
+  labs(
+    title = "Gender-Based Shelter Occupancy Trends Over Time",
+    subtitle = "Trends in shelter occupancy by gender across different periods",
+    x = "Date",
+    y = "Number of Occupants",
+    color = "Gender"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12)
+  )
+
+
 ```
-
-
 
 
 # Discussion
 
-## First discussion point {#sec-first-point}
-
-If my paper were 10 pages, then should be be at least 2.5 pages. The discussion is a chance to show off what you know and what you learnt from all this. 
-
-## Second discussion point
-
-## Third discussion point
-
-## Weaknesses and next steps
-
-Weaknesses and next steps should also be included.
+# Conclusion 
 
 \newpage
 
@@ -154,58 +215,6 @@ Weaknesses and next steps should also be included.
 
 # Appendix {-}
 
-
-# Additional data details
-
-# Model details {#sec-model-details}
-
-## Posterior predictive check
-
-In @fig-ppcheckandposteriorvsprior-1 we implement a posterior predictive check. This shows...
-
-In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. This shows... 
-
-```{r}
-#| eval: true
-#| echo: false
-#| message: false
-#| warning: false
-#| label: fig-ppcheckandposteriorvsprior
-#| layout-ncol: 2
-#| fig-cap: "Examining how the model fits, and is affected by, the data"
-#| fig-subcap: ["Posterior prediction check", "Comparing the posterior with the prior"]
-
-pp_check(first_model) +
-  theme_classic() +
-  theme(legend.position = "bottom")
-
-posterior_vs_prior(first_model) +
-  theme_minimal() +
-  scale_color_brewer(palette = "Set1") +
-  theme(legend.position = "bottom") +
-  coord_flip()
-```
-
-## Diagnostics
-
-@fig-stanareyouokay-1 is a trace plot. It shows... This suggests...
-
-@fig-stanareyouokay-2 is a Rhat plot. It shows... This suggests...
-
-```{r}
-#| echo: false
-#| eval: true
-#| message: false
-#| warning: false
-#| label: fig-stanareyouokay
-#| fig-cap: "Checking the convergence of the MCMC algorithm"
-#| fig-subcap: ["Trace plot", "Rhat plot"]
-#| layout-ncol: 2
-
-plot(first_model, "trace")
-
-plot(first_model, "rhat")
-```
 
 
 

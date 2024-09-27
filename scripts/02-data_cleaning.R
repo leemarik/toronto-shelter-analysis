@@ -7,44 +7,40 @@
 # Pre-requisites: None
 # Any other information needed? None
 
-### Workspace setup ###
-library(readr)
-library(dplyr)
-library(janitor)
 
-### Load data ###
+# Load raw data
 raw_data <- read_csv("data/raw_data/toronto-shelter-system-flow.csv")
 
-### Clean column names ###
+# Clean column names for consistency (e.g., snake_case)
 cleaned_data <- raw_data %>%
   janitor::clean_names()
 
-### Handle missing values ###
+# Remove any rows with missing values
 cleaned_data <- cleaned_data %>%
   drop_na()
 
-### Select relevant columns ###
-# Include all specific age columns, gender, and population group percentage
+# Select only the relevant columns (age groups, gender, population percentage, and transitions)
 cleaned_data <- cleaned_data %>%
-  select(ageunder16, age16_24, age25_34, age35_44, age45_54, age55_64, age65over, 
-         gender_male, gender_female, population_group_percentage)
+  select(ageunder16, age16_24, age25_34, age35_44, age45_54, age55_64, age65over,
+         gender_male, gender_female, population_group_percentage,
+         returned_from_housing, moved_to_housing, newly_identified)
 
-### Clean population_group_percentage by removing non-numeric characters ###
+# Clean population_group_percentage by removing any non-numeric characters
 cleaned_data <- cleaned_data %>%
-  mutate(
-    population_group_percentage = as.numeric(gsub("[^0-9.]", "", population_group_percentage)) # Remove non-numeric characters
-  )
+  mutate(population_group_percentage = as.numeric(gsub("[^0-9.]", "", population_group_percentage)))  # Ensure only numeric values
 
-### Remove rows with NA in population_group_percentage ###
+# Remove rows with NA in population_group_percentage (if any remain)
 cleaned_data <- cleaned_data %>%
   filter(!is.na(population_group_percentage))
 
-### Convert data types for gender columns ###
+# Convert gender columns (male and female) from characters to integers (if necessary)
 cleaned_data <- cleaned_data %>%
-  mutate(
-    gender_male = as.integer(gender_male),
-    gender_female = as.integer(gender_female)
-  )
+  mutate(across(c(gender_male, gender_female), as.integer))  # Applies as.integer to both gender columns
 
-### Save cleaned data ###
+# Handle missing values in transition columns (if applicable)
+cleaned_data <- cleaned_data %>%
+  mutate(across(c(returned_from_housing, moved_to_housing, newly_identified), ~ replace_na(.x, 0)))
+
+# Save the cleaned data to a new CSV file
 write_csv(cleaned_data, "data/analysis_data/cleaned_shelter_data.csv")
+
