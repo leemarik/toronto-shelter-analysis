@@ -29,6 +29,11 @@ cleaned_data <- cleaned_data %>%
 cleaned_data <- cleaned_data %>%
   mutate(population_group_percentage = as.numeric(gsub("[^0-9.]", "", population_group_percentage)))  # Ensure only numeric values
 
+# Population group column
+cleaned_data <- cleaned_data %>%
+  mutate(across(c(chronic, families, refugees, youth), 
+                ~ ifelse(. == "Yes", 1, 0)))
+
 # Remove rows with NA in population_group_percentage (if any remain)
 cleaned_data <- cleaned_data %>%
   filter(!is.na(population_group_percentage))

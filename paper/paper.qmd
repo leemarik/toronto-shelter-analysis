@@ -27,6 +27,7 @@ library(dplyr)
 library(tidyr)
 library(scales)
 library(janitor)
+library(lubridate)
 
 # Load The Toronto Shelter Dataset
 cleaned_data <- read_csv("../data/analysis_data/cleaned_shelter_data.csv")
@@ -40,25 +41,26 @@ Toronto is not an exception to the rule that large cities throughout the world c
 
 Through an analysis of shelter occupancy rates among various age, gender, and population categories, important insights on the dynamics of shelter use in Toronto can be obtained. Important trends will also be highlighted by this analysis, including which demographics are most vulnerable to homelessness and how shelter capacity varies.
 
-## Literature Review and Research Gap
 
 ## Research Question & Hypothesis
+What have been the main demographic trends in Toronto's shelter system over the last two years in terms of the number of people residing in shelters? How have these patterns changed over time according to population groups, age groups, and gender?
 
-# Methods
+Hypothesis: Males and middle-aged individuals (25–44) make up the majority of those who need shelter services. Over time, relative to other population groups, youth and refugees have greater rates of shelter usage.
 
+
+# Methodology
+The Toronto Shelter System dataset, which contains details on shelter occupancy, transitions, and demographics, provided the data used in this study. R programming was used to clean, transform, and visualize the dataset. The distribution of age groups, gender-based trends, demographic group trends, and shelter transitions are some of the key factors that were examined. To give a better understanding of shelter occupancy trends throughout various time periods and demographic groups, visualizations were made.
 
 
 # Result
 
-#Data
+The analysis's findings offer significant key insights into the patterns and demographics of Toronto's shelter usage throughout the previous two years. The gender, age, demographic groupings, and types of shelter transitions are represented in the following data that show trends in shelter usage.The goal of this analysis is to provide insight into shelter usage patterns in Toronto, helping policymakers understand the population groups most affected by homelessness.
 
-This analysis uses data from Toronto Open Data (@fig-shelter). The dataset includes shelter occupancy trends, broken down by age group, gender, and other demographic factors. The goal of this analysis is to provide insight into shelter usage patterns in Toronto, helping policymakers understand the population groups most affected by homelessness.
+1. Shelter Occupancy Trends by Age Group and Gender:
 
-1. Shelter Occupancy Trends by Age Group and Gender
-This graph will show the number of shelter occupants by age group, separated by gender.
-
+Males in the 35 to 44 age range have the greatest occupancy rates across all demographics, according to @fig-1, which analyzes shelter occupancy trends by age group and gender. It's noteworthy to observe that the gender gap is substantially less for younger age groups, such 16 to 24. This shows that, possibly as a result of distinct social dynamics, younger females may be more likely than their older counterparts to use shelters. When creating intervention programs, policymakers should take gender-sensitive methods into account, particularly for middle-aged men who make up the majority of the population that requires shelter services.
 ```{r}
-#| label: fig-shelter
+#| label: fig-1
 #| fig-cap: Shelter Occupancy Trends by Age Group and Gender
 #| echo: false
 
@@ -87,96 +89,181 @@ ggplot(cleaned_data_long, aes(x = occupants_age, y = age_group, fill = gender)) 
 ```
 
 
-2. Transition Trend Over Time
-This graph will show the number of people transitioning from or to shelter, like returned_from_housing, newly_identified, and moved_to_housing.
+2. Shelter Transition Over Time
+
+The patterns of shelter transitions, including individuals who were recently detected, relocated to housing, and returned from housing, are depicted in @fig-2. The majority of people entering the shelter system are those who have recently been recognized, which reflects continuous difficulties in preventing homelessness. In addition, the data shows cyclical peaks in the moved-to-housing and returned-from-housing categories, indicating that although the shelter system is successful in placing people in homes, there is a persistent problem with people going back to the shelters after being placed. This pattern is consistent with research by @Article, who observed that recurrent usage of shelters is frequently caused by a lack of long-term housing solutions. In order to address this, governments ought to provide priority to post-housing support services and sustainable housing options in order to lower the incidence of shelter dependency.
 
 ```{r}
-#| label: fig-trend
-#| fig-cap: Transition Trend Over Time
+#| label: fig-2
+#| fig-cap: Transition Trend Over 2 years
 #| echo: false
 
-# Assuming you have columns: returned_from_housing, newly_identified, moved_to_housing, and a time column (e.g., date)
 
-# Reshape the data to long format for plotting
+# Group by month
 transition_data <- cleaned_data %>%
-  pivot_longer(cols = c("returned_from_housing", "newly_identified", "moved_to_housing"), 
-               names_to = "transition_type", values_to = "count")
+  pivot_longer(cols = c("returned_from_housing", "moved_to_housing", "newly_identified"),
+               names_to = "transition_type", values_to = "count") %>%
+  filter(!is.na(count), !is.na(date)) %>%
+  mutate(month = floor_date(date, "month")) %>%   # Aggregating to months
+  group_by(month, transition_type) %>%
+  summarize(total_count = sum(count))
 
-# Plot - Transition Trends Over Time
-ggplot(transition_data, aes(x = date, y = count, color = transition_type)) +
+# Plot the aggregated data
+ggplot(transition_data, aes(x = month, y = total_count, color = transition_type)) + 
   geom_line(size = 1.2) +
   labs(
-    title = "Shelter Transition Trends Over Time",
-    subtitle = "Trends in shelter transitions including returns from housing and newly identified individuals",
+    title = "Shelter Transition Trends Over 2 Years",
     x = "Date",
     y = "Number of Transitions",
     color = "Transition Type"
   ) +
+  scale_x_date(limits = c(as.Date("2022-09-01"), as.Date("2024-09-01")), 
+               date_labels = "%b %Y",    # Showing month and year 
+               date_breaks = "6 months") +  # Break every 6 months for better spacing
   theme_minimal() +
   theme(
     plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
     axis.title.x = element_text(size = 12),
-    axis.title.y = element_text(size = 12)
+    axis.title.y = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.margin = margin(t = 20, r = 20, b = 20, l = 20)
   )
 
 
 ```
 
 3. Population Groups
-This graph will show different population groups like chronic, refugees, families, and youth in shelters over time.
-```{r}
-# Reshape population group data to long format
-population_group_data <- cleaned_data %>%
-  pivot_longer(cols = c("chronic", "refugees", "families", "youth"), 
-               names_to = "population_group", values_to = "count")
 
-# Plot - Population Group Trends Over Time
-ggplot(population_group_data, aes(x = date, y = count, color = population_group)) +
-  geom_line(size = 1.2) +
+@Fig-3 shows the patterns for several population groups, such as youth, families, refugees, and those experiencing chronic homelessness. Individuals experiencing chronic homelessness comprise a substantial proportion of the shelter population, with chronic cases regularly making up the highest part. Families and refugees exhibit erratic trends; among the former, there was a noticeable drop in the second year, which may have been related to adjustments in immigration patterns brought on by the COVID-19 pandemic. In the meantime, the number of young individuals stayed largely unchanged. This distribution is in line with other research showing that longer-term care and support are needed for homeless people in order to end the cycle of homelessness (@Article). As a result, focused interventions for chronic homelessness have to be given top priority, particularly in light of the significant demand this population has for shelter services.
+
+```{r}
+#| label: fig-3
+#| fig-cap: Population Groups
+#| echo: false
+
+
+# Check your actual population group columns and update the code
+population_group_data <- cleaned_data %>%
+  pivot_longer(cols = c("chronic", "refugees", "families", "youth"),  # Replace with correct columns
+               names_to = "population_group", 
+               values_to = "count")
+
+# Plot - Population Group Trends Over Time in Shelters
+ggplot(population_group_data, aes(x = date, y = count, fill = population_group)) +
+  geom_bar(stat = "identity", position = "fill") +
   labs(
     title = "Population Group Trends Over Time in Shelters",
     subtitle = "Trends of various population groups including chronic, refugees, families, and youth",
-    x = "Date",
-    y = "Number of People",
-    color = "Population Group"
+    x = "Date (Month-Year)",
+    y = "Proportion of People",
+    fill = "Population Group"
   ) +
+  scale_y_continuous(labels = scales::percent_format()) +  # To show percentages
+  scale_fill_manual(values = c("red", "green", "blue", "purple", "orange", "cyan", "pink")) +  # Custom colors
+    scale_x_date(limits = c(as.Date("2022-09-01"), as.Date("2024-09-01")), 
+               date_labels = "%b %Y",    
+               date_breaks = "6 months") + 
   theme_minimal() +
   theme(
     plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
     axis.title.x = element_text(size = 12),
-    axis.title.y = element_text(size = 12)
+    axis.title.y = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "right"
   )
+
+
+
 
 ```
 
 4. Age Distribution of Shelter Users
-This graph will show the distribution of shelter users across age groups, giving a clearer view of which age group uses the shelter system the most.
+
+The age distribution of shelter users (@fig-4) shows that the age groups with the highest number of users are those between 25 and 44, while the age categories with the lowest populations are younger people (under 16) and older adults (65 and above). The substantial participation of people between the ages of 25 and 44 is in line with earlier research that discovered that the prime working-age population is disproportionately impacted by housing instability and economic downturns. The comparatively low number of senior shelter users might point to a higher dependency on other support networks, such long-term housing or family care. By putting more emphasis on programs designed for young and middle-aged individuals and taking into consideration the unique requirements of older adults and minors, this data can assist in informing the allocation of resources.
 ```{r}
+#| label: fig-4
+#| fig-cap: Age Distribution of Shelter Users
+#| echo: false
+
+
+# Reshape data to long format for age groups
+age_distribution_data <- cleaned_data %>%
+  pivot_longer(
+    cols = c(ageunder16, age16_24, age25_34, age35_44, age45_54, age55_64, age65over),
+    names_to = "age_group",
+    values_to = "count"
+  )
+
+# Order Age group
+age_distribution_data$age_group <- factor(age_distribution_data$age_group, 
+                                          levels = c("ageunder16", "age16_24", "age25_34", 
+                                                     "age35_44", "age45_54", "age55_64", "age65over"))
+
 # Plot - Age Distribution of Shelter Users
-ggplot(cleaned_data_long, aes(x = age_group, y = occupants, fill = age_group)) +
-  geom_bar(stat = "identity") +
+ggplot(age_distribution_data, aes(x = age_group, y = count)) +
+  geom_bar(stat = "identity", fill = "Blue", alpha = 0.8, width = 0.7) +
   labs(
     title = "Age Distribution of Shelter Users",
-    subtitle = "Number of shelter occupants across different age groups",
+    subtitle = "Distribution of shelter users across different age groups",
     x = "Age Group",
-    y = "Number of Occupants",
-    fill = "Age Group"
+    y = "Number of Users"
   ) +
   theme_minimal() +
   theme(
     plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
     axis.title.x = element_text(size = 12),
-    axis.title.y = element_text(size = 12)
+    axis.title.y = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.major = element_line(color = "gray80"),
+    panel.grid.minor = element_blank()
   ) +
-  coord_flip()
+  scale_y_continuous(labels = scales::comma)  
+
 
 ```
 
 5. Gender-Based Shelter Trends Over Time
-This graph will show how shelter occupancy for males and females changes over time.
+Gender-based trend analysis (@fig-5) shows significant variations in male and female shelter occupancy throughout the two-year period. In the shelter system, men outnumbered females on a regular basis; during the winter, peak male occupancy exceeded 6,000. The number of female shelter occupants has not increased, despite similar seasonal trends. The University of Calgary study on the patterns and intensity of shelter usage in Toronto supports this constant gender gap, suggesting that males are more likely to rely on shelter services in Toronto, probably because of socioeconomic circumstances (@Article). These results point to the necessity of gender-specific interventions to address the different reasons why men and women become homeless.
+
 
 ```{r}
-# Assuming there is a time/date column and gender columns (gender_male, gender_female)
+#| label: fig-5
+#| fig-cap: Gender-Based Shelter Trends Over Time
+#| echo: false
+
+# Reshape the data to long format for plotting
+gender_trends_data <- cleaned_data %>%
+  pivot_longer(
+    cols = c(gender_male, gender_female),
+    names_to = "gender",
+    values_to = "count"
+  )
+
+# Replace the gender labels for clarity
+gender_trends_data <- gender_trends_data %>%
+  mutate(gender = ifelse(gender == "gender_male", "Male", "Female"))
+
+# Plot - Gender-Based Shelter Trends Over Time
+ggplot(gender_trends_data, aes(x = date, y = count, color = gender)) +
+  geom_line(size = 1.2) +
+  labs(
+    title = "Gender-Based Shelter Trends Over Time",
+    subtitle = "Trends in shelter occupancy for males and females over time",
+    x = "Date",
+    y = "Number of Occupants",
+    color = "Gender"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "right"
+  ) +
+  scale_y_continuous(labels = scales::comma) +  # Adding commas for readability
+  scale_x_date(date_labels = "%b-%Y", date_breaks = "3 months") +  # Format x-axis date
+  scale_color_manual(values = c("Male" = "#1f77b4", "Female" = "#ff7f0e"))  # Custom colors for gender
 
 # Reshape gender-based data to long format
 gender_trends_data <- cleaned_data %>%
@@ -194,6 +281,9 @@ ggplot(gender_trends_data, aes(x = date, y = occupants, color = gender)) +
     y = "Number of Occupants",
     color = "Gender"
   ) +
+  scale_x_date(limits = c(as.Date("2022-09-01"), as.Date("2024-09-01")), 
+               date_labels = "%b %Y",    
+               date_breaks = "6 months") + 
   theme_minimal() +
   theme(
     plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
@@ -208,13 +298,6 @@ ggplot(gender_trends_data, aes(x = date, y = occupants, color = gender)) +
 # Discussion
 
 # Conclusion 
-
-\newpage
-
-\appendix
-
-# Appendix {-}
-
 
 
 
