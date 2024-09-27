@@ -22,7 +22,7 @@ cleaned_data <- cleaned_data %>%
 # Select only the relevant columns (age groups, gender, population percentage, and transitions)
 cleaned_data <- cleaned_data %>%
   select(ageunder16, age16_24, age25_34, age35_44, age45_54, age55_64, age65over,
-         gender_male, gender_female, population_group_percentage,
+         gender_male, gender_female, population_group_percentage, 
          returned_from_housing, moved_to_housing, newly_identified)
 
 # Clean population_group_percentage by removing any non-numeric characters
@@ -41,6 +41,11 @@ cleaned_data <- cleaned_data %>%
 cleaned_data <- cleaned_data %>%
   mutate(across(c(returned_from_housing, moved_to_housing, newly_identified), ~ replace_na(.x, 0)))
 
+# Create a date column (assuming monthly data, starting from January 2020)
+cleaned_data <- cleaned_data %>%
+  mutate(date = seq(as.Date("2020-01-01"), by = "month", length.out = nrow(cleaned_data)))
+
 # Save the cleaned data to a new CSV file
 write_csv(cleaned_data, "data/analysis_data/cleaned_shelter_data.csv")
+
 
